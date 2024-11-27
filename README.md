@@ -1,3 +1,5 @@
+[![npm version](https://badge.fury.io/js/@vbusatta%2Fadonis-stripe.svg)](https://www.npmjs.com/package/@vbusatta/adonis-stripe)
+
 # AdonisJS 6 Stripe Integration
 
 Seamlessly integrate the Stripe SDK with AdonisJS 6 for secure and efficient payment handling.
@@ -15,7 +17,7 @@ Seamlessly integrate the Stripe SDK with AdonisJS 6 for secure and efficient pay
 Install the package:
 
 ```bash
-node ace add @vbusatta/adonisjs-stripe
+node ace add @vbusatta/adonis-stripe
 ```
 
 Then, configure the package by running:
@@ -43,7 +45,7 @@ STRIPE_API_VERSION = ''
 After configuration, a named middleware is automatically created:
 
 ```ts
-// /start/kernel.ts
+/start/kernel.ts
 
 export const middleware = router.named({
   verifyStripeWebhook: () => import('@vbusatta/adonis-stripe/middleware'),
@@ -53,7 +55,7 @@ export const middleware = router.named({
 In your webhook route, add the middleware to filter events and validate the signature:
 
 ```ts
-// /start/routes.ts
+/start/routes.ts
 
 import { middleware } from '#start/kernel'
 import router from '@adonisjs/core/services/router'
