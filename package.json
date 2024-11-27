@@ -1,0 +1,81 @@
+{
+    "name": "@vbusatta/adonis-stripe",
+    "description": "Provider for AdonisJS 6. Simplifies Stripe integration with webhooks and services.",
+    "version": "0.1.0",
+    "engines": {
+        "node": ">=20.6.0"
+    },
+    "main": "build/index.js",
+    "type": "module",
+    "files": [
+        "build"
+    ],
+    "exports": {
+        ".": "./build/index.js",
+        "./middleware": "./build/src/middleware.js",
+        "./provider": "./build/providers/stripe_provider.js",
+        "./types": "./build/types/*.js"
+    },
+    "scripts": {
+        "build": "npm run clean && tsc",
+        "clean": "del-cli build",
+        "copy:templates": "copyfiles \"stubs/**/*.stub\" build",
+        "format": "prettier --write .",
+        "lint": "eslint . --ext=.ts",
+        "postbuild": "npm run copy:templates",
+        "prepublishOnly": "npm run build",
+        "np": "np",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "typecheck": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "@adonisjs/assembler": "^7.2.3",
+        "@adonisjs/core": "^6.9.0",
+        "@adonisjs/eslint-config": "^1.3.0",
+        "@adonisjs/prettier-config": "^1.3.0",
+        "@adonisjs/tsconfig": "^1.3.0",
+        "@swc/core": "^1.4.6",
+        "@types/node": "^20.11.25",
+        "@types/stripe": "^8.0.416",
+        "copyfiles": "^2.4.1",
+        "del-cli": "^5.1.0",
+        "eslint": "^8.57.0",
+        "np": "^10.0.0",
+        "prettier": "^3.2.5",
+        "typescript": "^5.6.3"
+    },
+    "dependencies": {
+        "@poppinss/utils": "^6.7.3",
+        "stripe": "^17.4.0"
+    },
+    "c8": {
+        "reporter": [
+            "text",
+            "html"
+        ],
+        "exclude": [
+            "tests/**"
+        ]
+    },
+    "eslintConfig": {
+        "extends": "@adonisjs/eslint-config/package"
+    },
+    "prettier": "@adonisjs/prettier-config",
+    "license": "MIT",
+    "author": "vittorio busatta <vittoriobusatta092@gmail.com>",
+    "keywords": [
+        "adonisjs",
+        "stripe",
+        "adonis"
+    ],
+    "publishConfig": {
+        "access": "public",
+        "tag": "latest"
+    },
+    "np": {
+        "message": "chore(release): %s",
+        "tag": "latest",
+        "branch": "main",
+        "anyBranch": false
+    }
+}
