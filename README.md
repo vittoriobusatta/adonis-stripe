@@ -1,4 +1,6 @@
 [![npm version](https://badge.fury.io/js/@vbusatta%2Fadonis-stripe.svg)](https://www.npmjs.com/package/@vbusatta/adonis-stripe)
+[![npm downloads](https://img.shields.io/npm/dm/@vbusatta/adonis-stripe.svg)](https://www.npmjs.com/package/@vbusatta/adonis-stripe)
+[![License](https://img.shields.io/github/license/vittoriobusatta/adonis-stripe.svg)](https://github.com/vittoriobusatta/adonis-stripe/blob/main/LICENSE)
 
 # AdonisJS 6 Stripe Integration
 
@@ -6,9 +8,10 @@ Seamlessly integrate the Stripe SDK with AdonisJS 6 for secure and efficient pay
 
 ## Features
 
-- Plug-and-play configuration of the Stripe SDK in AdonisJS.
+- Easy setup and integration of the Stripe SDK in AdonisJS.
 - Middleware for secure webhook signature validation.
-- Fully customizable to fit your Stripe integration needs.
+- Centralized event handling with custom handlers.
+- Direct access to the Stripe SDK via the `api` property.
 
 ---
 
@@ -23,12 +26,12 @@ node ace add @vbusatta/adonis-stripe
 Then, configure the package by running:
 
 ```bash
-node ace configure @vbusatta/adonisjs-stripe
+node ace configure @vbusatta/adonis-stripe
 ```
 
 ## Configuration
 
-A configuration file `config/stripe.ts` will be created automatically. Make sure to include your Stripe credentials in `.env` file, as the latest API version is already set by default.
+A `config/stripe.ts` file will be generated. Add your Stripe credentials to the `.env` file. Specify an API version if needed, or leave it empty to use the latest.
 
 ### Example .env configuration:
 
@@ -40,22 +43,43 @@ STRIPE_API_VERSION = ''
 
 ## Usage
 
-### Middleware
+### Stripe Service
 
-After configuration, a named middleware is automatically created:
+The `stripe` service simplifies working with Stripe by exposing a direct `api` property, offering full access to the Stripe SDK:
 
 ```ts
-/start/kernel.ts
+// /services/payment_service.ts
+
+import stripe from '@vbusatta/adonis-stripe/services/main'
+
+export default class PaymentService {
+  async createPaymentIntent() {
+    return await stripe.api.paymentIntents.create({
+      amount: 1000,
+      currency: 'usd',
+    })
+  }
+}
+```
+
+### Middleware
+
+The middleware automatically validates Stripe webhook requests by checking the signature, ensuring secure communication.
+
+After configuration, a named middleware is created:
+
+```ts
+// /start/kernel.ts
 
 export const middleware = router.named({
   verifyStripeWebhook: () => import('@vbusatta/adonis-stripe/middleware'),
 })
 ```
 
-In your webhook route, add the middleware to filter events and validate the signature:
+Add this middleware to your webhook route to validate events:
 
 ```ts
-/start/routes.ts
+// /start/routes.ts
 
 import { middleware } from '#start/kernel'
 import router from '@adonisjs/core/services/router'
@@ -66,59 +90,40 @@ router
   .use(middleware.verifyStripeWebhook())
 ```
 
-### Stripe Service
-
-The package registers a StripeService in the IoC Container, giving you direct access to the Stripe SDK via the `api` property.
-
-```ts
-import { StripeService } from '@vbusatta/adonisjs-stripe'
-import { inject } from '@adonisjs/core'
-
-@inject()
-class PaymentService {
-  constructor(private stripe: StripeService) {}
-
-  async createPaymentIntent() {
-    return await this.stripe.api.paymentIntents.create({
-      amount: 1000,
-      currency: 'usd',
-    })
-  }
-}
-```
-
 ### Event Handling
 
-You can manage events using the handleEvent method, which filters and processes events, or the onEvent method, which links handlers to specific events.
+Stripe emits events for various actions (e.g., successful payments, failed charges). You can register custom handlers to process these events using the `onEvent` method:
 
 ```ts
-import { StripeService } from '@vbusatta/adonisjs-stripe'
-import { inject } from '@adonisjs/core'
+// /services/payment_service.ts
 
-@inject()
-class PaymentService {
-  constructor(private stripe: StripeService) {
-    this.stripe.onEvent('charge.succeeded', this.chargeSucceeded)
+import { Stripe } from 'stripe'
+import stripe from '@vbusatta/adonis-stripe/services/main'
+
+export default class PaymentService {
+  constructor() {
+    stripe.onEvent('charge.succeeded', this.chargeSucceeded.bind(this))
   }
 
-  async chargeSucceeded(event: Stripe.Event) {
+  private async chargeSucceeded(event: Stripe.Event) {
     const charge = event.data.object as Stripe.Charge
-    console.log(`Charge succeeded for ${charge.amount / 100} ${charge.currency}`)
+    console.log(`Charge ${charge.id} was successful`)
   }
 }
 ```
 
-### Extracting the Event from the Context
+### Webhook
 
-The middleware automatically parses and validates the event, making it available in the HTTP context:
+Webhook requests are validated by the middleware, and the business logic is handled directly by the `stripe` service. Your webhook controller only needs to acknowledge the request:
 
 ```ts
+// /controllers/payments_controller.ts
+
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class PaymentsController {
-  async handleWebhook({ event }: HttpContext) {
-    console.log(event)
-    // event: charge.succeeded
+  async handleWebhook({ response }: HttpContext) {
+    return response.ok({ received: true })
   }
 }
 ```
