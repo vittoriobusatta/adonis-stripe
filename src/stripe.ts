@@ -14,7 +14,7 @@ import type { LoggerService } from '@adonisjs/core/types'
 import { Stripe as StripeSDK } from 'stripe'
 import { EventHandlerFn, StripeConfig } from './types/main.js'
 
-export class StripeService {
+export default class StripeService {
   #stripe: StripeSDK
   #logger: LoggerService
   #webhookSecret: string | null
@@ -37,9 +37,17 @@ export class StripeService {
   }
 
   /**
+   * Processes an incoming webhook request by verifying the signature and handling the event.
+   */
+  async processWebhook(rawBody: Buffer, signature: string): Promise<void> {
+    const event = this.verifyWebhookSignature(rawBody, signature)
+    await this.handleEvent(event)
+  }
+
+  /**
    * Verifies the signature of a Stripe webhook request and extracts the event.
    */
-  verifyWebhookSignature(rawBody: Buffer, signature: string) {
+  private verifyWebhookSignature(rawBody: Buffer, signature: string) {
     if (!this.#webhookSecret) {
       this.#logger.error('Stripe webhook secret is missing')
       throw new Error('Webhook secret not configured')
@@ -56,7 +64,7 @@ export class StripeService {
   /**
    * Processes a Stripe event by invoking the registered handler.
    */
-  async handleEvent(event: StripeSDK.Event) {
+  private async handleEvent(event: StripeSDK.Event) {
     this.#logger.debug(`Handling event type: ${event.type}`)
     const handler = this.#eventHandlers[event.type]
     if (handler) {

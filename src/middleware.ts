@@ -10,11 +10,11 @@
 
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
-import { StripeService } from './stripe.js'
-import { Stripe as StripeSDK } from 'stripe'
+
+import StripeService from './stripe.js'
 
 export default class InitializeStripeWebhookMiddleware {
-  constructor(private stripe: StripeService) {}
+  constructor(protected stripe: StripeService) {}
 
   async handle(ctx: HttpContext, next: NextFn) {
     const sig = ctx.request.header('stripe-signature')
@@ -25,22 +25,15 @@ export default class InitializeStripeWebhookMiddleware {
       return ctx.response.status(400).send('Invalid webhook request')
     }
 
-    try {
-      const event = this.stripe.verifyWebhookSignature(Buffer.from(rawBody), sig)
-      await this.stripe.handleEvent(event)
+    const rawBodyBuffer = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody, 'utf-8')
 
-      ctx.event = event
+    try {
+      await this.stripe.processWebhook(rawBodyBuffer, sig)
     } catch (error) {
       ctx.logger.error(`Webhook signature verification failed: ${error.message}`)
       return ctx.response.status(400).send('Webhook signature is missing')
     }
 
     await next()
-  }
-}
-
-declare module '@adonisjs/core/http' {
-  interface HttpContext {
-    event: StripeSDK.Event
   }
 }
