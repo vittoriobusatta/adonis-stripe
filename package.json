@@ -1,7 +1,7 @@
 {
     "name": "@vbusatta/adonis-stripe",
     "description": "Provider for AdonisJS 6. Simplifies Stripe integration with webhooks and services.",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "engines": {
         "node": ">=20.6.0"
     },
